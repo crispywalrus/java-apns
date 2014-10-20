@@ -1,4 +1,20 @@
-Build status: [![Build Status](https://travis-ci.org/notnoop/java-apns.png)](https://travis-ci.org/notnoop/java-apns)
+Build status:
+
+   * Main fork [![Build Status](https://travis-ci.org/notnoop/java-apns.png)](https://travis-ci.org/notnoop/java-apns)
+   * Development [![Build Status](https://travis-ci.org/java-apns/java-apns.png)](https://travis-ci.org/java-apns/java-apns)
+
+Development - Version 1.0.0
+---------------------------
+There currently is a perelease for 1.0.0 which fixes a number of problems over 0.2.3. 
+There's still a CI test that sporadically fails on Travis-CI only, but not on other test
+machines I have access to. Supposedly it is a still undetected race condition.
+
+However 1.0.0 Beta fixes a *lot* of problems over 0.2.x, so even as it is called beta
+I'd recommend to use the beta instead of the 0.2.3 even for production.
+
+froh42 will return to develop for java-apns in October, so I expect the 1.0.0 final
+to be released start of November.
+
 
 Introduction
 ------------
@@ -20,7 +36,7 @@ Features:
   *  Easy to use, high performance APNS Service API
   *  Supports Apple Feedback service
   *  Support Enhanced Apple Push Notification
-  *  Support MDM and Newstand Notifications
+  *  Support MDM and Newsstand Notifications
   *  Easy to use with Apple certificates
   *  Easy to extend and reuse
   *  Easy to integrate with dependency injection frameworks
@@ -65,7 +81,7 @@ localizable alert:
 
     String payload = APNS.newPayload()
                 .badge(3)
-                .customField("secret", "what do you think?");
+                .customField("secret", "what do you think?")
                 .localizedKey("GAME_PLAY_REQUEST_FORMAT")
                 .localizedArguments("Jenna", "Frank")
                 .actionKey("Play").build();
@@ -76,7 +92,7 @@ localizable alert:
 Enhanced Notification Format
 ----------------
 
-You can use the enhanced notification format to get feetback from Apple about notifications that were unable to be processed.
+You can use the enhanced notification format to get feedback from Apple about notifications that were unable to be processed.
 
      String payload = APNS.newPayload()
                 .badge(3)
@@ -85,8 +101,10 @@ You can use the enhanced notification format to get feetback from Apple about no
                 .localizedArguments("Jenna", "Frank")
                 .actionKey("Play").build();
 
+     int now =  (int)(new Date().getTime()/1000);
+
      EnhancedApnsNotification notification = new EnhancedApnsNotification(EnhancedApnsNotification.INCREMENT_ID() /* Next ID */,
-         new Date().getTime() + 60 * 60 /* Expire in one hour */,
+         now + 60 * 60 /* Expire in one hour */,
          token /* Device Token */,
          payload);
 
