@@ -28,23 +28,53 @@
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.notnoop.exceptions;
+package com.notnoop.apns.utils.Simulator;
 
-import java.io.IOException;
+import com.notnoop.apns.ApnsNotification;
+import com.notnoop.apns.DeliveryError;
 
-/**
- * Signals that an I/O exception of some sort has occurred. This
- * class is the general class of exceptions produced by failed or
- * interrupted I/O operations.
- *
- * This is a RuntimeException, unlike the java.io.IOException
- */
-public class RuntimeIOException extends ApnsException {
-    private static final long serialVersionUID = 8665285084049041306L;
+public class ApnsResponse {
 
-    public RuntimeIOException()                      { super(); }
-    public RuntimeIOException(String message)        { super(message); }
-    public RuntimeIOException(IOException cause)       { super(cause); }
-    public RuntimeIOException(String m, IOException c) { super(m, c); }
+    private final Action action;
+    private final DeliveryError error;
+    private final int errorId;
+
+    private ApnsResponse(Action action, DeliveryError error, int errorId) {
+        this.action = action;
+        this.error = error;
+        this.errorId = errorId;
+    }
+
+    public boolean isDoNothing() {
+        return action == Action.DO_NOTHING;
+    }
+
+    public Action getAction() {
+        return action;
+    }
+
+    public DeliveryError getError() {
+        return error;
+    }
+
+    public int getErrorId() {
+        return errorId;
+    }
+
+    public static ApnsResponse doNothing() {
+        return new ApnsResponse(Action.DO_NOTHING, null, 0);
+    }
+
+    public static ApnsResponse returnError(DeliveryError error, int errorId) {
+        return new ApnsResponse(Action.RETURN_ERROR, error, errorId);
+    }
+
+    public static ApnsResponse returnErrorAndShutdown(DeliveryError error, int errorId) {
+        return new ApnsResponse(Action.RETURN_ERROR_AND_SHUTDOWN, error, errorId);
+    }
+
+    public static ApnsResponse returnErrorAndShutdown(DeliveryError error, ApnsNotification notification) {
+        return new ApnsResponse(Action.RETURN_ERROR_AND_SHUTDOWN, error, notification.getIdentifier());
+    }
 
 }

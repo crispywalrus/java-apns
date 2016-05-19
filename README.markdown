@@ -44,10 +44,22 @@ Features:
   *  Supports connection pooling
   *  Supports re-transmission of Notifications after error
 
-Sample Code
-----------------
+Getting started
+---------------
 
-To send a notification, you can do it in two steps:
+Add the following dependencies to your `pom.xml` file:
+
+
+        <dependency>
+             <groupId>com.notnoop.apns</groupId>
+             <artifactId>apns</artifactId>
+             <version>1.0.0.Beta6</version>
+        </dependency>
+
+Sample Code
+-----------
+
+To send a notification, you can do it in three steps:
 
 1. Setup the connection
 
@@ -148,4 +160,4 @@ Licensed under the [New 3-Clause BSD License](http://www.opensource.org/licenses
 
 Contact
 ---------------
-Support mailing list: http://groups.google.com/group/java-apns-discuss
+Support mailing list: http://groups.google.com/group/java-apns-discuss 

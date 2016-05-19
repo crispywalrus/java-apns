@@ -28,23 +28,20 @@
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.notnoop.exceptions;
-
-import java.io.IOException;
+package com.notnoop.apns;
 
 /**
- * Signals that an I/O exception of some sort has occurred. This
- * class is the general class of exceptions produced by failed or
- * interrupted I/O operations.
- *
- * This is a RuntimeException, unlike the java.io.IOException
+ * A delegate that also gets notified just before a notification is being delivered to the
+ * Apple Server.
  */
-public class RuntimeIOException extends ApnsException {
-    private static final long serialVersionUID = 8665285084049041306L;
+public interface StartSendingApnsDelegate extends ApnsDelegate {
 
-    public RuntimeIOException()                      { super(); }
-    public RuntimeIOException(String message)        { super(message); }
-    public RuntimeIOException(IOException cause)       { super(cause); }
-    public RuntimeIOException(String m, IOException c) { super(m, c); }
+    /**
+     * Called when message is about to be sent to the Apple servers.
+     *
+     * @param message the notification that is about to be sent
+     * @param resent whether the notification is being resent after an error
+     */
+    public void startSending(ApnsNotification message, boolean resent);
 
 }

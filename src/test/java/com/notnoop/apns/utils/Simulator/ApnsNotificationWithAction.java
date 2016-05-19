@@ -28,23 +28,41 @@
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.notnoop.exceptions;
+package com.notnoop.apns.utils.Simulator;
 
-import java.io.IOException;
+import com.notnoop.apns.utils.Simulator.ApnsServerSimulator.Notification;
 
-/**
- * Signals that an I/O exception of some sort has occurred. This
- * class is the general class of exceptions produced by failed or
- * interrupted I/O operations.
- *
- * This is a RuntimeException, unlike the java.io.IOException
- */
-public class RuntimeIOException extends ApnsException {
-    private static final long serialVersionUID = 8665285084049041306L;
+public class ApnsNotificationWithAction {
+    private final Notification notification;
+    private final ApnsResponse response;
 
-    public RuntimeIOException()                      { super(); }
-    public RuntimeIOException(String message)        { super(message); }
-    public RuntimeIOException(IOException cause)       { super(cause); }
-    public RuntimeIOException(String m, IOException c) { super(m, c); }
+    public ApnsNotificationWithAction(Notification notification) {
+        this(notification, ApnsResponse.doNothing());
+    }
+
+    public ApnsNotificationWithAction(Notification notification, ApnsResponse response) {
+        if (notification == null)
+        {
+            throw new NullPointerException("notification cannot be null");
+        }
+        this.notification = notification;
+        if (response == null)
+        {
+            throw new NullPointerException("response cannot be null");
+        }
+        this.response = response;
+    }
+
+    public Notification getNotification() {
+        return notification;
+    }
+
+    public int getId() {
+        return notification.getIdentifier();
+    }
+
+    public ApnsResponse getResponse() {
+        return response;
+    }
 
 }

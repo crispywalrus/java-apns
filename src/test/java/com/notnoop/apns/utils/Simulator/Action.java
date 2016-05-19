@@ -28,23 +28,8 @@
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package com.notnoop.exceptions;
+package com.notnoop.apns.utils.Simulator;
 
-import java.io.IOException;
-
-/**
- * Signals that an I/O exception of some sort has occurred. This
- * class is the general class of exceptions produced by failed or
- * interrupted I/O operations.
- *
- * This is a RuntimeException, unlike the java.io.IOException
- */
-public class RuntimeIOException extends ApnsException {
-    private static final long serialVersionUID = 8665285084049041306L;
-
-    public RuntimeIOException()                      { super(); }
-    public RuntimeIOException(String message)        { super(message); }
-    public RuntimeIOException(IOException cause)       { super(cause); }
-    public RuntimeIOException(String m, IOException c) { super(m, c); }
-
+public enum Action {
+    DO_NOTHING, RETURN_ERROR, RETURN_ERROR_AND_SHUTDOWN
 }

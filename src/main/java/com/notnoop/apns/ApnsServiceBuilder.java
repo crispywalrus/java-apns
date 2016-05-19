@@ -1,55 +1,71 @@
 /*
- * Copyright 2009, Mahmood Ali.
- * All rights reserved.
+ *  Copyright 2009, Mahmood Ali.
+ *  All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are
+ *  met:
  *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following disclaimer
- *     in the documentation and/or other materials provided with the
- *     distribution.
- *   * Neither the name of Mahmood Ali. nor the names of its
- *     contributors may be used to endorse or promote products derived from
- *     this software without specific prior written permission.
+ *    * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *    * Redistributions in binary form must reproduce the above
+ *      copyright notice, this list of conditions and the following disclaimer
+ *      in the documentation and/or other materials provided with the
+ *      distribution.
+ *    * Neither the name of Mahmood Ali. nor the names of its
+ *      contributors may be used to endorse or promote products derived from
+ *      this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package com.notnoop.apns;
 
+import com.notnoop.apns.internal.ApnsConnection;
+import com.notnoop.apns.internal.ApnsConnectionImpl;
+import com.notnoop.apns.internal.ApnsFeedbackConnection;
+import com.notnoop.apns.internal.ApnsPooledConnection;
+import com.notnoop.apns.internal.ApnsServiceImpl;
+import com.notnoop.apns.internal.BatchApnsService;
+import com.notnoop.apns.internal.QueuedApnsService;
+import com.notnoop.apns.internal.SSLContextBuilder;
+import com.notnoop.apns.internal.Utilities;
+import com.notnoop.exceptions.InvalidSSLConfig;
+import com.notnoop.exceptions.RuntimeIOException;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
-
 import java.security.KeyStore;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-
-import com.notnoop.apns.internal.*;
-import com.notnoop.exceptions.InvalidSSLConfig;
-import com.notnoop.exceptions.RuntimeIOException;
-
-import static com.notnoop.apns.internal.Utilities.*;
+import static com.notnoop.apns.internal.Utilities.PRODUCTION_FEEDBACK_HOST;
+import static com.notnoop.apns.internal.Utilities.PRODUCTION_FEEDBACK_PORT;
+import static com.notnoop.apns.internal.Utilities.PRODUCTION_GATEWAY_HOST;
+import static com.notnoop.apns.internal.Utilities.PRODUCTION_GATEWAY_PORT;
+import static com.notnoop.apns.internal.Utilities.SANDBOX_FEEDBACK_HOST;
+import static com.notnoop.apns.internal.Utilities.SANDBOX_FEEDBACK_PORT;
+import static com.notnoop.apns.internal.Utilities.SANDBOX_GATEWAY_HOST;
+import static com.notnoop.apns.internal.Utilities.SANDBOX_GATEWAY_PORT;
+import static java.util.concurrent.Executors.defaultThreadFactory;
 
 /**
  * The class is used to create instances of {@link ApnsService}.
@@ -74,8 +90,8 @@ public class ApnsServiceBuilder {
 
     private SSLContext sslContext;
 
-    private int readTimeout = 0;
-    private int connectTimeout = 0;
+    private int readTimeout;
+    private int connectTimeout;
 
     private String gatewayHost;
     private int gatewayPort = -1;
@@ -85,23 +101,23 @@ public class ApnsServiceBuilder {
     private int pooledMax = 1;
     private int cacheLength = ApnsConnection.DEFAULT_CACHE_LENGTH;
     private boolean autoAdjustCacheLength = true;
-    private ExecutorService executor = null;
+    private ExecutorService executor;
 
     private ReconnectPolicy reconnectPolicy = ReconnectPolicy.Provided.EVERY_HALF_HOUR.newObject();
-    private boolean isQueued = false;
-    private ThreadFactory queueThreadFactory = null;
+    private boolean isQueued;
+    private ThreadFactory queueThreadFactory;
     
-    private boolean isBatched = false;
+    private boolean isBatched;
     private int batchWaitTimeInSec;
     private int batchMaxWaitTimeInSec;
-    private ThreadFactory batchThreadFactory = null;
+    private ScheduledExecutorService batchThreadPoolExecutor;
     
     private ApnsDelegate delegate = ApnsDelegate.EMPTY;
-    private Proxy proxy = null;
-    private String proxyUsername = null;
-    private String proxyPassword = null;
+    private Proxy proxy;
+    private String proxyUsername;
+    private String proxyPassword;
     private boolean errorDetection = true;
-    private ThreadFactory errorDetectionThreadFactory = null;
+    private ThreadFactory errorDetectionThreadFactory;
 
     /**
      * Constructs a new instance of {@code ApnsServiceBuilder}
@@ -171,9 +187,11 @@ public class ApnsServiceBuilder {
     public ApnsServiceBuilder withCert(InputStream stream, String password)
     throws InvalidSSLConfig {
         assertPasswordNotEmpty(password);
-        return withSSLContext(
-                newSSLContext(stream, password,
-                        KEYSTORE_TYPE, KEY_ALGORITHM));
+        return withSSLContext(new SSLContextBuilder()
+                .withAlgorithm(KEY_ALGORITHM)
+                .withCertificateKeyStore(stream, password, KEYSTORE_TYPE)
+                .withDefaultTrustKeyStore()
+                .build());
     }
 
     /**
@@ -197,10 +215,79 @@ public class ApnsServiceBuilder {
     public ApnsServiceBuilder withCert(KeyStore keyStore, String password)
     throws InvalidSSLConfig {
         assertPasswordNotEmpty(password);
-        return withSSLContext(
-                newSSLContext(keyStore, password, KEY_ALGORITHM));
+        return withSSLContext(new SSLContextBuilder()
+                .withAlgorithm(KEY_ALGORITHM)
+                .withCertificateKeyStore(keyStore, password)
+                .withDefaultTrustKeyStore()
+                .build());
     }
-    
+
+    /**
+     * Specify the certificate store used to connect to Apple APNS
+     * servers.  This relies on the stream of keystore (*.p12 | *.jks)
+     * containing the keys and certificates, along with the given
+     * password and alias.
+     *
+     * The keystore can be either PKCS12 or JKS and the keystore
+     * needs to be encrypted using the SunX509 algorithm.
+     *
+     * This library does not support password-less p12 certificates, due to a
+     * Oracle Java library <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6415637">
+     * Bug 6415637</a>.  There are three workarounds: use a password-protected
+     * certificate, use a different boot Java SDK implementation, or constract
+     * the `SSLContext` yourself!  Needless to say, the password-protected
+     * certificate is most recommended option.
+     *
+     * @param stream    the keystore represented as input stream
+     * @param password  the password of the keystore
+     * @param alias     the alias identifing the key to be used
+     * @return  this
+     * @throws InvalidSSLConfig if stream is an invalid Keystore,
+     *  the password is invalid or the alias is not found
+     */
+    public ApnsServiceBuilder withCert(InputStream stream, String password, String alias)
+            throws InvalidSSLConfig {
+        assertPasswordNotEmpty(password);
+        return withSSLContext(new SSLContextBuilder()
+                .withAlgorithm(KEY_ALGORITHM)
+                .withCertificateKeyStore(stream, password, KEYSTORE_TYPE, alias)
+                .withDefaultTrustKeyStore()
+                .build());
+    }
+
+    /**
+     * Specify the certificate store used to connect to Apple APNS
+     * servers.  This relies on the stream of keystore (*.p12 | *.jks)
+     * containing the keys and certificates, along with the given
+     * password and alias.
+     *
+     * The keystore can be either PKCS12 or JKS and the keystore
+     * needs to be encrypted using the SunX509 algorithm.
+     *
+     * This library does not support password-less p12 certificates, due to a
+     * Oracle Java library <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6415637">
+     * Bug 6415637</a>.  There are three workarounds: use a password-protected
+     * certificate, use a different boot Java SDK implementation, or constract
+     * the `SSLContext` yourself!  Needless to say, the password-protected
+     * certificate is most recommended option.
+     *
+     * @param keyStore  the keystore
+     * @param password  the password of the keystore
+     * @param alias     the alias identifing the key to be used
+     * @return  this
+     * @throws InvalidSSLConfig if stream is an invalid Keystore,
+     *  the password is invalid or the alias is not found
+     */
+    public ApnsServiceBuilder withCert(KeyStore keyStore, String password, String alias)
+            throws InvalidSSLConfig {
+        assertPasswordNotEmpty(password);
+        return withSSLContext(new SSLContextBuilder()
+                .withAlgorithm(KEY_ALGORITHM)
+                .withCertificateKeyStore(keyStore, password, alias)
+                .withDefaultTrustKeyStore()
+                .build());
+    }
+
 	private void assertPasswordNotEmpty(String password) {
 		if (password == null || password.length() == 0) {
             throw new IllegalArgumentException("Passwords must be specified." +
@@ -529,7 +616,7 @@ public class ApnsServiceBuilder {
      *            maximum wait time for batch before executing
      */
     public ApnsServiceBuilder asBatched(int waitTimeInSec, int maxWaitTimeInSec) {
-        return asBatched(waitTimeInSec, maxWaitTimeInSec, null);
+        return asBatched(waitTimeInSec, maxWaitTimeInSec, (ThreadFactory)null);
     }
     
     /**
@@ -552,14 +639,36 @@ public class ApnsServiceBuilder {
      *            thread factory to use for batch processing
      */
     public ApnsServiceBuilder asBatched(int waitTimeInSec, int maxWaitTimeInSec, ThreadFactory threadFactory) {
+        return asBatched(waitTimeInSec, maxWaitTimeInSec, new ScheduledThreadPoolExecutor(1, threadFactory != null ? threadFactory : defaultThreadFactory()));
+    }
+
+    /**
+     * Construct service which will process notification requests in batch.
+     * After each request batch will wait <code>waitTimeInSec</code> for more request to come
+     * before executing but not more than <code>maxWaitTimeInSec</code>
+     * 
+     * Each batch creates new connection and close it after finished.
+     * In case reconnect policy is specified it will be applied by batch processing. 
+     * E.g.: {@link ReconnectPolicy.Provided#EVERY_HALF_HOUR} will reconnect the connection in case batch is running for more than half an hour
+     * 
+     * Note: It is not recommended to use pooled connection
+     * 
+     * @param waitTimeInSec
+     *            time to wait for more notification request before executing
+     *            batch
+     * @param maxWaitTimeInSec
+     *            maximum wait time for batch before executing
+     * @param batchThreadPoolExecutor
+     *            executor for batched processing (may be null)
+     */
+    public ApnsServiceBuilder asBatched(int waitTimeInSec, int maxWaitTimeInSec, ScheduledExecutorService batchThreadPoolExecutor) {
         this.isBatched = true;
         this.batchWaitTimeInSec = waitTimeInSec;
         this.batchMaxWaitTimeInSec = maxWaitTimeInSec;
-        this.batchThreadFactory = threadFactory;
+        this.batchThreadPoolExecutor = batchThreadPoolExecutor;
         return this;
     }
-    
-    
+
     /**
      * Sets the delegate of the service, that gets notified of the
      * status of message delivery.
@@ -629,7 +738,7 @@ public class ApnsServiceBuilder {
         }
         
         if (isBatched) {
-            service = new BatchApnsService(conn, feedback, batchWaitTimeInSec, batchMaxWaitTimeInSec, batchThreadFactory);
+            service = new BatchApnsService(conn, feedback, batchWaitTimeInSec, batchMaxWaitTimeInSec, batchThreadPoolExecutor);
         }
 
         service.start();
